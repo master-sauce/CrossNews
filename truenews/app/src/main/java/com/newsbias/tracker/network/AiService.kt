@@ -1,66 +1,98 @@
 package com.newsbias.tracker.network
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class AiService @Inject constructor(private val client: OkHttpClient) {
+class AiService @Inject constructor(baseClient: OkHttpClient) {
 
-    /** Single-turn prompt via Pollinations (free, no key). */
-    suspend fun prompt(systemPrompt: String, userPrompt: String): String? =
-        withContext(Dispatchers.IO) {
-            try {
-                val body = JSONObject().apply {
-                    put("model", "openai")
-                    put("messages", JSONArray().apply {
-                        put(JSONObject().apply {
-                            put("role", "system"); put("content", systemPrompt)
-                        })
-                        put(JSONObject().apply {
-                            put("role", "user"); put("content", userPrompt)
-                        })
-                    })
-                    put("private", true)
-                }.toString()
+    // Dedicated client with longer timeouts for AI calls
+    private val client: OkHttpClient = baseClient.newBuilder()
+        .connectTimeout(20, TimeUnit.SECONDS)
+        .readTimeout(90, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
+        .callTimeout(120, TimeUnit.SECONDS)
+        .retryOnConnectionFailure(true)
+        .build()
 
-                val req = Request.Builder()
-                    .url("https://text.pollinations.ai/openai")
-                    .post(body.toRequestBody("application/json".toMediaType()))
-                    .build()
+    suspend fun prompt(
+        systemPrompt: String,
+        userPrompt: String,
+        maxRetries: Int = 3,
+    ): String? = withContext(Dispatchers.IO) {
+        var lastError: String? = null
 
-                client.newCall(req).execute().use { resp ->
-                    if (!resp.isSuccessful) return@withContext null
-                    val raw = resp.body?.string() ?: return@withContext null
-                    // Response is OpenAI-compatible JSON
-                    try {
-                        JSONObject(raw)
-                            .getJSONArray("choices")
-                            .getJSONObject(0)
-                            .getJSONObject("message")
-                            .getString("content")
-                            .trim()
-                    } catch (e: Exception) {
-                        raw.trim()  // fallback: plain text
-                    }
-                }
-            } catch (e: Exception) {
-                null
+        repeat(maxRetries) { attempt ->
+            if (attempt > 0) delay(1500L * attempt)  // backoff
+
+            val result = withTimeoutOrNull(90_000L) { callOnce(systemPrompt, userPrompt) }
+            when {
+                result != null && result.isNotBlank() -> return@withContext result
+                else -> lastError = "ניסיון ${attempt + 1} נכשל"
             }
         }
+        null
+    }
 
-    /** Returns true if AI says same topic. */
+    private fun callOnce(systemPrompt: String, userPrompt: String): String? {
+        return try {
+            val body = JSONObject().apply {
+                put("model", "openai")
+                put("messages", JSONArray().apply {
+                    put(JSONObject().apply {
+                        put("role", "system"); put("content", systemPrompt)
+                    })
+                    put(JSONObject().apply {
+                        put("role", "user"); put("content", userPrompt)
+                    })
+                })
+                put("private", true)
+            }.toString()
+
+            val req = Request.Builder()
+                .url("https://text.pollinations.ai/openai")
+                .post(body.toRequestBody("application/json".toMediaType()))
+                .build()
+
+            client.newCall(req).execute().use { resp ->
+                if (!resp.isSuccessful) return null
+                val raw = resp.body?.string() ?: return null
+                parseResponse(raw)
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun parseResponse(raw: String): String? {
+        return try {
+            JSONObject(raw)
+                .getJSONArray("choices")
+                .getJSONObject(0)
+                .getJSONObject("message")
+                .getString("content")
+                .trim()
+                .takeIf { it.isNotBlank() }
+        } catch (e: Exception) {
+            raw.trim().takeIf { it.isNotBlank() && !it.startsWith("{") }
+        }
+    }
+
     suspend fun isSameTopic(titleA: String, sourceA: String, titleB: String, sourceB: String): Boolean? {
         val answer = prompt(
-            systemPrompt = "אתה עוזר לבדוק האם שתי כותרות חדשות ישראליות מדווחות על אותו אירוע. ענה במילה אחת בלבד: כן או לא.",
-            userPrompt = "כותרת 1 ($sourceA): $titleA\nכותרת 2 ($sourceB): $titleB\n\nהאם שתי הכותרות מדווחות על אותו אירוע? ענה רק: כן / לא",
+            "אתה עוזר לבדוק האם שתי כותרות חדשות ישראליות מדווחות על אותו אירוע. ענה במילה אחת בלבד: כן או לא.",
+            "כותרת 1 ($sourceA): $titleA\nכותרת 2 ($sourceB): $titleB\n\nהאם שתי הכותרות מדווחות על אותו אירוע? ענה רק: כן / לא",
         ) ?: return null
         return answer.contains("כן") && !answer.contains("לא")
     }

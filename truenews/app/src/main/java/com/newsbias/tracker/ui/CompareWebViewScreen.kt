@@ -132,7 +132,7 @@ fun CompareWebViewScreen(
         if (showAiSheet) {
             ModalBottomSheet(onDismissRequest = { showAiSheet = false }) {
                 AiAnalysisContent(aiState) {
-                    aiViewModel.analyze(leftUrl, rightUrl)
+                    aiViewModel.retry(leftUrl, rightUrl)
                 }
             }
         }
@@ -140,7 +140,10 @@ fun CompareWebViewScreen(
 }
 
 @Composable
-private fun AiAnalysisContent(state: CompareAiState, onRetry: () -> Unit) {
+private fun AiAnalysisContent(
+    state: CompareAiState,
+    onRetry: () -> Unit,
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -150,33 +153,51 @@ private fun AiAnalysisContent(state: CompareAiState, onRetry: () -> Unit) {
         Text("ניתוח AI", fontSize = 18.sp, fontWeight = FontWeight.Bold)
         Spacer(Modifier.height(12.dp))
 
-        when {
-            state.loading -> {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
-                    Spacer(Modifier.width(10.dp))
-                    Text("מנתח את שתי הכתבות... (30-60 שניות)", fontSize = 13.sp)
-                }
+        if (state.loading) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                Spacer(Modifier.width(10.dp))
+                Text(state.stage.ifBlank { "מתחיל..." }, fontSize = 13.sp)
             }
-            state.error != null -> {
-                Text("⚠️ ${state.error}", color = FakeHigh, fontSize = 13.sp)
-                Spacer(Modifier.height(8.dp))
-                Button(onClick = onRetry) { Text("נסה שוב") }
-            }
-            state.comparison != null -> {
-                SummaryBlock("סיכום כתבה 1", state.leftSummary ?: "")
-                Spacer(Modifier.height(10.dp))
-                SummaryBlock("סיכום כתבה 2", state.rightSummary ?: "")
-                Spacer(Modifier.height(10.dp))
-                SummaryBlock("השוואה בין השתיים", state.comparison, highlight = true)
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    "ניתוח מבוסס AI חיצוני — עשוי להכיל שגיאות",
-                    fontSize = 10.sp,
-                    color = OnSurface2,
-                )
-            }
+            Spacer(Modifier.height(12.dp))
         }
+
+        if (state.error != null) {
+            Text("⚠️ ${state.error}", color = FakeHigh, fontSize = 13.sp)
+            Spacer(Modifier.height(8.dp))
+            Button(onClick = onRetry) { Text("נסה שוב") }
+            Spacer(Modifier.height(24.dp))
+            return@Column
+        }
+
+        state.leftSummary?.let {
+            SummaryBlock("סיכום כתבה 1", it)
+            Spacer(Modifier.height(10.dp))
+        }
+        state.rightSummary?.let {
+            SummaryBlock("סיכום כתבה 2", it)
+            Spacer(Modifier.height(10.dp))
+        }
+        state.comparison?.let {
+            SummaryBlock("השוואה בין השתיים", it, highlight = true)
+            Spacer(Modifier.height(12.dp))
+            Text(
+                "ניתוח מבוסס AI חיצוני — עשוי להכיל שגיאות",
+                fontSize = 10.sp,
+                color = OnSurface2,
+            )
+        }
+
+        val anyFailed = !state.loading && (
+                state.leftSummary?.startsWith("(שגיאה") == true ||
+                        state.rightSummary?.startsWith("(שגיאה") == true ||
+                        state.comparison?.startsWith("(שגיאה") == true
+                )
+        if (anyFailed) {
+            Spacer(Modifier.height(12.dp))
+            OutlinedButton(onClick = onRetry) { Text("נסה שוב") }
+        }
+
         Spacer(Modifier.height(24.dp))
     }
 }
