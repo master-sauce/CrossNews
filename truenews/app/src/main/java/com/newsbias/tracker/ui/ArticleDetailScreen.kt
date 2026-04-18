@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Public
@@ -35,11 +36,15 @@ fun ArticleDetailScreen(
     onBack: () -> Unit,
     onOpenWebView: (String) -> Unit,
     viewModel: ArticleDetailViewModel = hiltViewModel(),
+    aiViewModel: ArticleAiViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val aiState by aiViewModel.state.collectAsStateWithLifecycle()
     val article = state.article
     val uriHandler = LocalUriHandler.current
     val context = LocalContext.current
+
+    var showAiSheet by remember { mutableStateOf(false) }
 
     LaunchedEffect(encodedUrl) { viewModel.load(encodedUrl) }
 
@@ -49,6 +54,16 @@ fun ArticleDetailScreen(
                 title = { Text(article?.source ?: "") },
                 navigationIcon = {
                     IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "חזרה") }
+                },
+                actions = {
+                    article?.let { a ->
+                        IconButton(onClick = {
+                            showAiSheet = true
+                            aiViewModel.analyze(a.url)
+                        }) {
+                            Icon(Icons.Default.AutoAwesome, "סכם עם AI")
+                        }
+                    }
                 },
             )
         }
@@ -69,7 +84,6 @@ fun ArticleDetailScreen(
 
                 item { CorroborationBadge(a.corroborationCount) }
 
-                // Primary: open in WebView
                 item {
                     Button(
                         onClick = { onOpenWebView(a.url) },
@@ -82,7 +96,21 @@ fun ArticleDetailScreen(
                     }
                 }
 
-                // Secondary: copy + external browser
+                item {
+                    OutlinedButton(
+                        onClick = {
+                            showAiSheet = true
+                            aiViewModel.analyze(a.url)
+                        },
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        shape = RoundedCornerShape(10.dp),
+                    ) {
+                        Icon(Icons.Default.AutoAwesome, null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("סכם עם AI", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+
                 item {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -176,6 +204,12 @@ fun ArticleDetailScreen(
                 }
 
                 item { Spacer(Modifier.height(24.dp)) }
+            }
+
+            if (showAiSheet) {
+                ModalBottomSheet(onDismissRequest = { showAiSheet = false }) {
+                    AiSummaryContent(aiState) { aiViewModel.retry(a.url) }
+                }
             }
         } ?: Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
             CircularProgressIndicator()

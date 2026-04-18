@@ -13,10 +13,13 @@ enum class CorroborationFilter { ALL, FOUND, NOT_FOUND }
 
 data class FeedUiState(
     val articles: List<NewsArticle> = emptyList(),
+    val allSources: List<String> = emptyList(),
     val isRefreshing: Boolean = false,
     val filter: CorroborationFilter = CorroborationFilter.ALL,
+    val searchQuery: String = "",
+    val sourceFilter: Set<String> = emptySet(),   // empty = all sources
     val selectionMode: Boolean = false,
-    val selected: List<String> = emptyList(),   // URLs
+    val selected: List<String> = emptyList(),
     val error: String? = null,
 )
 
@@ -26,6 +29,8 @@ class NewsViewModel @Inject constructor(
 ) : ViewModel() {
 
     private val filter = MutableStateFlow(CorroborationFilter.ALL)
+    private val searchQuery = MutableStateFlow("")
+    private val sourceFilter = MutableStateFlow<Set<String>>(emptySet())
     private val isRefreshing = MutableStateFlow(false)
     private val selectionMode = MutableStateFlow(false)
     private val selected = MutableStateFlow<List<String>>(emptyList())
@@ -33,17 +38,40 @@ class NewsViewModel @Inject constructor(
 
     val state: StateFlow<FeedUiState> = combine(
         repository.allArticles,
-        filter,
-        isRefreshing,
-        selectionMode,
-        combine(selected, error) { a, b -> a to b },
-    ) { articles, f, refreshing, selMode, (sel, err) ->
-        val filtered = when (f) {
-            CorroborationFilter.ALL       -> articles
-            CorroborationFilter.FOUND     -> articles.filter { it.corroborationCount > 0 }
-            CorroborationFilter.NOT_FOUND -> articles.filter { it.corroborationCount == 0 }
-        }
-        FeedUiState(filtered, refreshing, f, selMode, sel, err)
+        combine(filter, searchQuery, sourceFilter) { f, q, s -> Triple(f, q, s) },
+        combine(isRefreshing, selectionMode, selected, error) { r, sm, sel, err ->
+            Quadruple(r, sm, sel, err)
+        },
+    ) { articles, (f, q, sources), (refreshing, selMode, sel, err) ->
+        val allSources = articles.map { it.source }.distinct().sorted()
+
+        val filtered = articles.asSequence()
+            .filter {
+                when (f) {
+                    CorroborationFilter.ALL       -> true
+                    CorroborationFilter.FOUND     -> it.corroborationCount > 0
+                    CorroborationFilter.NOT_FOUND -> it.corroborationCount == 0
+                }
+            }
+            .filter { sources.isEmpty() || it.source in sources }
+            .filter {
+                q.isBlank() ||
+                        it.title.contains(q, ignoreCase = true) ||
+                        it.source.contains(q, ignoreCase = true)
+            }
+            .toList()
+
+        FeedUiState(
+            articles = filtered,
+            allSources = allSources,
+            isRefreshing = refreshing,
+            filter = f,
+            searchQuery = q,
+            sourceFilter = sources,
+            selectionMode = selMode,
+            selected = sel,
+            error = err,
+        )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), FeedUiState())
 
     init { refresh() }
@@ -57,6 +85,12 @@ class NewsViewModel @Inject constructor(
     }
 
     fun setFilter(f: CorroborationFilter) { filter.value = f }
+    fun setSearchQuery(q: String) { searchQuery.value = q }
+    fun toggleSource(src: String) {
+        val cur = sourceFilter.value
+        sourceFilter.value = if (src in cur) cur - src else cur + src
+    }
+    fun clearSources() { sourceFilter.value = emptySet() }
 
     fun toggleSelectionMode() {
         selectionMode.value = !selectionMode.value
@@ -67,12 +101,12 @@ class NewsViewModel @Inject constructor(
         val cur = selected.value
         selected.value = when {
             url in cur     -> cur - url
-            cur.size >= 2  -> listOf(cur.last(), url)   // keep only last 2
+            cur.size >= 2  -> listOf(cur.last(), url)
             else           -> cur + url
         }
     }
 
-    fun clearSelection() { selected.value = emptyList() }
-
     fun clearError() { error.value = null }
 }
+
+private data class Quadruple<A, B, C, D>(val a: A, val b: B, val c: C, val d: D)
