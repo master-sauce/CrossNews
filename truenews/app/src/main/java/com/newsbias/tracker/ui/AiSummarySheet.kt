@@ -40,9 +40,15 @@ fun AiSummaryContent(state: ArticleAiState, onRetry: () -> Unit) {
                 Button(onClick = onRetry) { Text("נסה שוב") }
             }
             state.summary != null -> {
-                SummaryBox("סיכום", state.summary, highlight = true)
-                Spacer(Modifier.height(10.dp))
-                SummaryBox("עובדות מרכזיות", state.keyPoints ?: "")
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f))
+                        .padding(12.dp)
+                ) {
+                    Text(state.summary, fontSize = 14.sp, lineHeight = 22.sp)
+                }
                 Spacer(Modifier.height(12.dp))
                 Text(
                     "ניתוח מבוסס AI חיצוני — עשוי להכיל שגיאות",
@@ -52,23 +58,5 @@ fun AiSummaryContent(state: ArticleAiState, onRetry: () -> Unit) {
             }
         }
         Spacer(Modifier.height(24.dp))
-    }
-}
-
-@Composable
-private fun SummaryBox(title: String, content: String, highlight: Boolean = false) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .background(
-                if (highlight) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                else DarkSurface2
-            )
-            .padding(12.dp)
-    ) {
-        Text(title, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = OnSurface2)
-        Spacer(Modifier.height(6.dp))
-        Text(content, fontSize = 13.sp, lineHeight = 20.sp)
     }
 }

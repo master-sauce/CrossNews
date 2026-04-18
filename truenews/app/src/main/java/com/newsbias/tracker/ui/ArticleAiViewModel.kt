@@ -13,7 +13,6 @@ import javax.inject.Inject
 data class ArticleAiState(
     val loading: Boolean = false,
     val summary: String? = null,
-    val keyPoints: String? = null,
     val error: String? = null,
 )
 
@@ -30,7 +29,7 @@ class ArticleAiViewModel @Inject constructor(
 
     fun analyze(url: String) {
         if (_state.value.loading) return
-        if (url == lastUrl && _state.value.summary != null) return  // cached
+        if (url == lastUrl && _state.value.summary != null) return
         lastUrl = url
         _state.value = ArticleAiState(loading = true)
 
@@ -42,20 +41,13 @@ class ArticleAiViewModel @Inject constructor(
                     return@launch
                 }
 
-                val sys = "אתה עורך חדשות. ענה בעברית בלבד, קצר וממוקד."
-
                 val summary = ai.prompt(
-                    sys,
+                    "אתה עורך חדשות. ענה בעברית בלבד, קצר וממוקד.",
                     "סכם את הכתבה הבאה ב-3-4 משפטים ברורים:\n\n$text"
-                )
-                val keyPoints = ai.prompt(
-                    sys,
-                    "הוצא את 3-5 העובדות המרכזיות מהכתבה. כל עובדה בשורה נפרדת, מתחילה ב-•\n\n$text"
                 )
 
                 _state.value = ArticleAiState(
                     summary = summary ?: "(שגיאה בסיכום)",
-                    keyPoints = keyPoints ?: "(שגיאה בעובדות)",
                 )
             } catch (e: Exception) {
                 _state.value = ArticleAiState(error = e.message ?: "שגיאה")
