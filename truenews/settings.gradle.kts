@@ -19,6 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "true-news"
+rootProject.name = "CrossNews"
 include(":app")
- 

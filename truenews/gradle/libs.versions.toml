@@ -8,6 +8,7 @@ hiltExt = "1.2.0"
 composeBom = "2024.02.00"
 room = "2.6.1"
 okhttp = "4.12.0"
+gson = "2.10.1"
 jsoup = "1.17.2"
 coroutines = "1.7.3"
 lifecycle = "2.7.0"
@@ -48,6 +49,7 @@ room-compiler = { group = "androidx.room", name = "room-compiler", version.ref =
 # Network
 okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
 okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
+gson = { group = "com.google.code.gson", name = "gson", version.ref = "gson" }
 jsoup = { group = "org.jsoup", name = "jsoup", version.ref = "jsoup" }
 
 # Coroutines
