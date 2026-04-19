@@ -46,14 +46,6 @@ fun ArticleCard(article: NewsArticle, onClick: () -> Unit) {
                         style = MaterialTheme.typography.labelLarge,
                         color = sourceColor(article.source),
                     )
-                    Spacer(Modifier.width(8.dp))
-                    Text("•", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        timeAgoHebrew(article.publishedDate),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
                 }
 
                 Spacer(Modifier.height(8.dp))

@@ -130,14 +130,6 @@ fun ArticleDetailScreen(
                             style = MaterialTheme.typography.labelLarge,
                             color = sourceColor(a.source),
                         )
-                        Spacer(Modifier.width(8.dp))
-                        Text("•", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            timeAgoHebrew(a.publishedDate),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
                     }
                 }
 
