@@ -41,31 +41,56 @@ fun NewsListScreen(
     var searchActive by remember { mutableStateOf(false) }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                title = {
+            Column {
+                // Masthead
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surface)
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     if (searchActive) {
                         TextField(
                             value = state.searchQuery,
                             onValueChange = { viewModel.setSearchQuery(it) },
                             placeholder = { Text("חפש כותרת...", fontSize = 14.sp) },
                             singleLine = true,
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.weight(1f),
                             colors = TextFieldDefaults.colors(
                                 focusedContainerColor = Color.Transparent,
                                 unfocusedContainerColor = Color.Transparent,
                             ),
                         )
                     } else {
-                        Text(if (state.selectionMode) "בחר 2 כתבות" else "חדשות")
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                if (state.selectionMode) "בחר 2 כתבות" else "חדשות",
+                                style = MaterialTheme.typography.displayLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .padding(top = 2.dp)
+                                    .width(42.dp)
+                                    .height(3.dp)
+                                    .background(MaterialTheme.colorScheme.primary)
+                            )
+                        }
                     }
-                },
-                actions = {
+
                     IconButton(onClick = {
-                        if (searchActive) { viewModel.setSearchQuery(""); searchActive = false }
-                        else searchActive = true
+                        if (searchActive) {
+                            viewModel.setSearchQuery("")
+                            searchActive = false
+                        } else searchActive = true
                     }) {
-                        Icon(if (searchActive) Icons.Default.Close else Icons.Default.Search, "חיפוש")
+                        Icon(
+                            if (searchActive) Icons.Default.Close else Icons.Default.Search,
+                            "חיפוש",
+                        )
                     }
                     IconButton(onClick = { viewModel.toggleSelectionMode() }) {
                         Icon(
@@ -76,8 +101,12 @@ fun NewsListScreen(
                     IconButton(onClick = { viewModel.refresh() }) {
                         Icon(Icons.Default.Refresh, "רענון")
                     }
-                },
-            )
+                }
+                HorizontalDivider(
+                    thickness = 0.5.dp,
+                    color = MaterialTheme.colorScheme.outline,
+                )
+            }
         },
         floatingActionButton = {
             if (state.selectionMode && state.selected.size == 2) {
@@ -88,12 +117,18 @@ fun NewsListScreen(
                     },
                     icon = { Icon(Icons.Default.CompareArrows, null) },
                     text = { Text("השווה") },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
                 )
             }
         },
     ) { padding ->
-        Column(modifier = Modifier.padding(padding).fillMaxSize()) {
-
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+        ) {
             FilterBar(state.filter) { viewModel.setFilter(it) }
 
             SourceFilterBar(
@@ -107,25 +142,37 @@ fun NewsListScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(DarkSurface2)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
                         .padding(horizontal = 16.dp, vertical = 6.dp)
                 ) {
-                    Text("נבחרו ${state.selected.size}/2", fontSize = 12.sp, color = OnSurface2)
+                    Text(
+                        "נבחרו ${state.selected.size}/2",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
 
+            HorizontalDivider(
+                thickness = 0.5.dp,
+                color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+            )
+
             if (state.articles.isEmpty() && state.isRefreshing) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                 }
             } else if (state.articles.isEmpty()) {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("אין כתבות בסינון הנוכחי", color = OnSurface2)
+                    Text(
+                        "אין כתבות בסינון הנוכחי",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             } else {
                 LazyColumn(
-                    contentPadding = PaddingValues(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(vertical = 0.dp),
+                    verticalArrangement = Arrangement.spacedBy(0.dp),
                 ) {
                     items(state.articles, key = { it.url }) { article ->
                         if (state.selectionMode) {
@@ -138,7 +185,7 @@ fun NewsListScreen(
                             ArticleCard(article) { onArticleClick(article.url) }
                         }
                     }
-                    item { Spacer(Modifier.height(72.dp)) }
+                    item { Spacer(Modifier.height(80.dp)) }
                 }
             }
         }
@@ -146,17 +193,27 @@ fun NewsListScreen(
 }
 
 @Composable
-private fun FilterBar(current: CorroborationFilter, onChange: (CorroborationFilter) -> Unit) {
+private fun FilterBar(
+    current: CorroborationFilter,
+    onChange: (CorroborationFilter) -> Unit,
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface)
             .horizontalScroll(rememberScrollState())
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        FilterPill("הכל", current == CorroborationFilter.ALL) { onChange(CorroborationFilter.ALL) }
-        FilterPill("נמצא במקורות", current == CorroborationFilter.FOUND) { onChange(CorroborationFilter.FOUND) }
-        FilterPill("לא נמצא במקורות", current == CorroborationFilter.NOT_FOUND) { onChange(CorroborationFilter.NOT_FOUND) }
+        FilterPill("הכל", current == CorroborationFilter.ALL) {
+            onChange(CorroborationFilter.ALL)
+        }
+        FilterPill("נמצא במקורות", current == CorroborationFilter.FOUND) {
+            onChange(CorroborationFilter.FOUND)
+        }
+        FilterPill("לא נמצא במקורות", current == CorroborationFilter.NOT_FOUND) {
+            onChange(CorroborationFilter.NOT_FOUND)
+        }
     }
 }
 
@@ -171,8 +228,9 @@ private fun SourceFilterBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface)
             .horizontalScroll(rememberScrollState())
-            .padding(horizontal = 12.dp, vertical = 4.dp),
+            .padding(horizontal = 12.dp, vertical = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         FilterPill("כל המקורות", selected.isEmpty()) { onClear() }
@@ -184,8 +242,10 @@ private fun SourceFilterBar(
 
 @Composable
 private fun FilterPill(label: String, selected: Boolean, onClick: () -> Unit) {
-    val bg = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.25f) else DarkSurface2
-    val fg = if (selected) MaterialTheme.colorScheme.primary else OnSurface2
+    val bg = if (selected) MaterialTheme.colorScheme.primary
+    else MaterialTheme.colorScheme.surfaceVariant
+    val fg = if (selected) MaterialTheme.colorScheme.onPrimary
+    else MaterialTheme.colorScheme.onSurfaceVariant
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(20.dp))
@@ -193,15 +253,16 @@ private fun FilterPill(label: String, selected: Boolean, onClick: () -> Unit) {
             .clickable { onClick() }
             .padding(horizontal = 14.dp, vertical = 6.dp),
     ) {
-        Text(label, fontSize = 12.sp, color = fg, fontWeight = FontWeight.Medium)
+        Text(label, fontSize = 12.sp, color = fg, fontWeight = FontWeight.SemiBold)
     }
 }
 
 @Composable
 private fun SourceFilterPill(source: String, selected: Boolean, onClick: () -> Unit) {
     val color = sourceColor(source)
-    val bg = if (selected) color.copy(alpha = 0.25f) else DarkSurface2
-    val fg = if (selected) color else OnSurface2
+    val bg = if (selected) color.copy(alpha = 0.20f)
+    else MaterialTheme.colorScheme.surfaceVariant
+    val fg = if (selected) color else MaterialTheme.colorScheme.onSurfaceVariant
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(20.dp))
@@ -209,7 +270,7 @@ private fun SourceFilterPill(source: String, selected: Boolean, onClick: () -> U
             .clickable { onClick() }
             .padding(horizontal = 12.dp, vertical = 5.dp),
     ) {
-        Text(source, fontSize = 11.sp, color = fg, fontWeight = FontWeight.Medium)
+        Text(source, fontSize = 11.sp, color = fg, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -220,32 +281,39 @@ private fun SelectableArticleCard(
     onClick: () -> Unit,
 ) {
     val borderColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else DarkSurface
-        ),
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(if (isSelected) 2.dp else 0.dp, borderColor),
+    val bgColor = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
+    else MaterialTheme.colorScheme.surface
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .background(bgColor)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            modifier = Modifier.padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(
-                imageVector = if (isSelected) Icons.Default.CheckCircle else Icons.Outlined.Circle,
-                contentDescription = null,
-                tint = if (isSelected) MaterialTheme.colorScheme.primary else OnSurface2,
-                modifier = Modifier.size(24.dp),
+        Icon(
+            imageVector = if (isSelected) Icons.Default.CheckCircle else Icons.Outlined.Circle,
+            contentDescription = null,
+            tint = if (isSelected) MaterialTheme.colorScheme.primary
+            else MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(24.dp),
+        )
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            SourceChip(article.source)
+            Spacer(Modifier.height(6.dp))
+            Text(
+                article.title,
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 3,
+                color = MaterialTheme.colorScheme.onSurface,
             )
-            Spacer(Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                SourceChip(article.source)
-                Spacer(Modifier.height(6.dp))
-                Text(article.title, fontSize = 13.sp, fontWeight = FontWeight.Medium, maxLines = 3)
-                Spacer(Modifier.height(6.dp))
-                CorroborationBadge(article.corroborationCount)
-            }
+            Spacer(Modifier.height(6.dp))
+            CorroborationBadge(article.corroborationCount)
         }
     }
+    HorizontalDivider(
+        thickness = 0.5.dp,
+        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+    )
 }

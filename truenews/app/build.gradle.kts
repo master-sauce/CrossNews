@@ -102,4 +102,7 @@ dependencies {
 
     // WorkManager
     implementation(libs.work.runtime.ktx)
+
+    //for ui
+    implementation("io.coil-kt:coil-compose:2.5.0")
 }
