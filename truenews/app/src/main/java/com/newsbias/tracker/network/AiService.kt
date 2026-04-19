@@ -17,7 +17,6 @@ import javax.inject.Singleton
 @Singleton
 class AiService @Inject constructor(baseClient: OkHttpClient) {
 
-    // Dedicated client with longer timeouts for AI calls
     private val client: OkHttpClient = baseClient.newBuilder()
         .connectTimeout(20, TimeUnit.SECONDS)
         .readTimeout(90, TimeUnit.SECONDS)
@@ -26,29 +25,44 @@ class AiService @Inject constructor(baseClient: OkHttpClient) {
         .retryOnConnectionFailure(true)
         .build()
 
+    // Models to try in order (better Hebrew → fallback)
+    private val models = listOf("openai-large", "openai", "mistral")
+
+    private val hebrewStyleRules = """
+        חוקים קריטיים לניסוח התשובה:
+        - כתוב בעברית תקנית בלבד, ללא שגיאות כתיב או דקדוק.
+        - הקפד על התאמת מין ומספר (זכר/נקבה, יחיד/רבים).
+        - השתמש בניקוד רק כשחובה להבנה.
+        - אל תערבב אנגלית בתוך המשפט העברי (שמות לועזיים מותר).
+        - אל תתרגם מילולית מאנגלית - נסח בעברית טבעית וזורמת.
+        - הימנע מצורות ארכאיות או ספרותיות מדי - שפה עיתונאית שוטפת.
+        - סיים משפטים בנקודה, השתמש בפסיקים נכון.
+        - שמור על טון ענייני, קצר וברור.
+    """.trimIndent()
+
     suspend fun prompt(
         systemPrompt: String,
         userPrompt: String,
         maxRetries: Int = 3,
     ): String? = withContext(Dispatchers.IO) {
-        var lastError: String? = null
+        val enrichedSystem = "$systemPrompt\n\n$hebrewStyleRules"
 
         repeat(maxRetries) { attempt ->
-            if (attempt > 0) delay(1500L * attempt)  // backoff
+            if (attempt > 0) delay(1500L * attempt)
 
-            val result = withTimeoutOrNull(90_000L) { callOnce(systemPrompt, userPrompt) }
-            when {
-                result != null && result.isNotBlank() -> return@withContext result
-                else -> lastError = "ניסיון ${attempt + 1} נכשל"
+            val model = models[attempt.coerceAtMost(models.size - 1)]
+            val result = withTimeoutOrNull(90_000L) {
+                callOnce(enrichedSystem, userPrompt, model)
             }
+            if (!result.isNullOrBlank()) return@withContext result
         }
         null
     }
 
-    private fun callOnce(systemPrompt: String, userPrompt: String): String? {
+    private fun callOnce(systemPrompt: String, userPrompt: String, model: String): String? {
         return try {
             val body = JSONObject().apply {
-                put("model", "openai")
+                put("model", model)
                 put("messages", JSONArray().apply {
                     put(JSONObject().apply {
                         put("role", "system"); put("content", systemPrompt)
@@ -57,6 +71,7 @@ class AiService @Inject constructor(baseClient: OkHttpClient) {
                         put("role", "user"); put("content", userPrompt)
                     })
                 })
+                put("temperature", 0.3)  // lower = fewer hallucinations / typos
                 put("private", true)
             }.toString()
 
