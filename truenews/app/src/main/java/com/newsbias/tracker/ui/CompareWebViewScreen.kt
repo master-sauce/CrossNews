@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -44,28 +45,47 @@ fun CompareWebViewScreen(
     val uriHandler = LocalUriHandler.current
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        when (mode) {
-                            CompareMode.FULLSCREEN -> "כתבה ${fullscreenIndex + 1}/2"
-                            else -> "השוואה"
-                        },
-                        fontSize = 15.sp,
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "חזרה") }
-                },
-                actions = {
+            Column {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surface)
+                        .padding(horizontal = 8.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, "חזרה")
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            when (mode) {
+                                CompareMode.FULLSCREEN -> "כתבה ${fullscreenIndex + 1}/2"
+                                else -> "השוואה"
+                            },
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Box(
+                            modifier = Modifier
+                                .padding(top = 2.dp)
+                                .width(32.dp)
+                                .height(3.dp)
+                                .background(MaterialTheme.colorScheme.primary)
+                        )
+                    }
                     IconButton(onClick = {
                         showAiSheet = true
                         if (aiState.leftSummary == null && !aiState.loading) {
                             aiViewModel.analyze(leftUrl, rightUrl)
                         }
                     }) {
-                        Icon(Icons.Default.AutoAwesome, "נתח עם AI")
+                        Icon(
+                            Icons.Default.AutoAwesome,
+                            "נתח עם AI",
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
                     }
                     IconButton(onClick = {
                         mode = when (mode) {
@@ -83,8 +103,12 @@ fun CompareWebViewScreen(
                             contentDescription = "שנה פריסה",
                         )
                     }
-                },
-            )
+                }
+                HorizontalDivider(
+                    thickness = 0.5.dp,
+                    color = MaterialTheme.colorScheme.outline,
+                )
+            }
         },
         floatingActionButton = {
             if (mode == CompareMode.FULLSCREEN) {
@@ -94,6 +118,8 @@ fun CompareWebViewScreen(
                     text = {
                         Text(if (fullscreenIndex == 0) "עבור לכתבה 2" else "עבור לכתבה 1")
                     },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
                 )
             }
         },
@@ -103,7 +129,10 @@ fun CompareWebViewScreen(
                 CompareMode.VERTICAL -> Column(modifier = Modifier.fillMaxSize()) {
                     PaneHeader("כתבה 1", leftUrl, context, uriHandler)
                     ArticleWebView(leftUrl, Modifier.weight(1f).fillMaxWidth())
-                    HorizontalDivider(thickness = 2.dp)
+                    HorizontalDivider(
+                        thickness = 2.dp,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
                     PaneHeader("כתבה 2", rightUrl, context, uriHandler)
                     ArticleWebView(rightUrl, Modifier.weight(1f).fillMaxWidth())
                 }
@@ -112,7 +141,10 @@ fun CompareWebViewScreen(
                         PaneHeader("כתבה 1", leftUrl, context, uriHandler)
                         ArticleWebView(leftUrl, Modifier.weight(1f).fillMaxWidth())
                     }
-                    VerticalDivider(thickness = 2.dp)
+                    VerticalDivider(
+                        thickness = 2.dp,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
                     Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
                         PaneHeader("כתבה 2", rightUrl, context, uriHandler)
                         ArticleWebView(rightUrl, Modifier.weight(1f).fillMaxWidth())
@@ -140,6 +172,58 @@ fun CompareWebViewScreen(
 }
 
 @Composable
+private fun PaneHeader(
+    label: String,
+    url: String,
+    context: Context,
+    uriHandler: androidx.compose.ui.platform.UriHandler,
+) {
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(6.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary)
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                label.uppercase(),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.weight(1f),
+            )
+            IconButton(
+                onClick = {
+                    val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    cm.setPrimaryClip(ClipData.newPlainText("url", url))
+                    Toast.makeText(context, "הקישור הועתק", Toast.LENGTH_SHORT).show()
+                },
+                modifier = Modifier.size(32.dp),
+            ) {
+                Icon(Icons.Default.ContentCopy, "העתק", modifier = Modifier.size(16.dp))
+            }
+            IconButton(
+                onClick = { uriHandler.openUri(url) },
+                modifier = Modifier.size(32.dp),
+            ) {
+                Icon(Icons.Default.Public, "דפדפן", modifier = Modifier.size(16.dp))
+            }
+        }
+        HorizontalDivider(
+            thickness = 0.5.dp,
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+        )
+    }
+}
+
+@Composable
 private fun AiAnalysisContent(
     state: CompareAiState,
     onRetry: () -> Unit,
@@ -150,14 +234,42 @@ private fun AiAnalysisContent(
             .verticalScroll(rememberScrollState())
             .padding(16.dp),
     ) {
-        Text("ניתוח AI", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-        Spacer(Modifier.height(12.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Default.AutoAwesome,
+                null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(22.dp),
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                "ניתוח AI",
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+        Box(
+            modifier = Modifier
+                .padding(top = 2.dp)
+                .width(42.dp)
+                .height(3.dp)
+                .background(MaterialTheme.colorScheme.primary)
+        )
+        Spacer(Modifier.height(14.dp))
 
         if (state.loading) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                CircularProgressIndicator(
+                    modifier = Modifier.size(18.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.primary,
+                )
                 Spacer(Modifier.width(10.dp))
-                Text(state.stage.ifBlank { "מתחיל..." }, fontSize = 13.sp)
+                Text(
+                    state.stage.ifBlank { "מתחיל..." },
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
             }
             Spacer(Modifier.height(12.dp))
         }
@@ -165,7 +277,13 @@ private fun AiAnalysisContent(
         if (state.error != null) {
             Text("⚠️ ${state.error}", color = FakeHigh, fontSize = 13.sp)
             Spacer(Modifier.height(8.dp))
-            Button(onClick = onRetry) { Text("נסה שוב") }
+            Button(
+                onClick = onRetry,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ),
+            ) { Text("נסה שוב") }
             Spacer(Modifier.height(24.dp))
             return@Column
         }
@@ -184,7 +302,7 @@ private fun AiAnalysisContent(
             Text(
                 "ניתוח מבוסס AI חיצוני — עשוי להכיל שגיאות",
                 fontSize = 10.sp,
-                color = OnSurface2,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 
@@ -210,46 +328,21 @@ private fun SummaryBlock(title: String, content: String, highlight: Boolean = fa
             .clip(RoundedCornerShape(10.dp))
             .background(
                 if (highlight) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                else DarkSurface2
+                else MaterialTheme.colorScheme.surfaceVariant
             )
             .padding(12.dp)
     ) {
-        Text(title, fontSize = 12.sp, fontWeight = FontWeight.Bold, color = OnSurface2)
-        Spacer(Modifier.height(6.dp))
-        Text(content, fontSize = 13.sp, lineHeight = 20.sp)
-    }
-}
-
-@Composable
-private fun PaneHeader(
-    label: String,
-    url: String,
-    context: Context,
-    uriHandler: androidx.compose.ui.platform.UriHandler,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(DarkSurface2)
-            .padding(horizontal = 8.dp, vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
         Text(
-            label,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.Bold,
-            color = OnSurface2,
-            modifier = Modifier.weight(1f),
+            title.uppercase(),
+            style = MaterialTheme.typography.labelLarge,
+            color = if (highlight) MaterialTheme.colorScheme.primary
+            else MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        IconButton(onClick = {
-            val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            cm.setPrimaryClip(ClipData.newPlainText("url", url))
-            Toast.makeText(context, "הקישור הועתק", Toast.LENGTH_SHORT).show()
-        }, modifier = Modifier.size(32.dp)) {
-            Icon(Icons.Default.ContentCopy, "העתק", modifier = Modifier.size(16.dp))
-        }
-        IconButton(onClick = { uriHandler.openUri(url) }, modifier = Modifier.size(32.dp)) {
-            Icon(Icons.Default.Public, "דפדפן", modifier = Modifier.size(16.dp))
-        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            content,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
     }
 }

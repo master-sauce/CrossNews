@@ -50,6 +50,9 @@ fun NavGraph(
                 onOpenWebView = { url ->
                     navController.navigate(Screen.WebView.createRoute(url))
                 },
+                onOpenArticle = { url ->
+                    navController.navigate(Screen.Detail.createRoute(url))
+                },
             )
         }
 

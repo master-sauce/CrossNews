@@ -5,9 +5,11 @@ import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -35,6 +37,7 @@ fun ArticleDetailScreen(
     encodedUrl: String,
     onBack: () -> Unit,
     onOpenWebView: (String) -> Unit,
+    onOpenArticle: (String) -> Unit,
     viewModel: ArticleDetailViewModel = hiltViewModel(),
     aiViewModel: ArticleAiViewModel = hiltViewModel(),
 ) {
@@ -49,36 +52,89 @@ fun ArticleDetailScreen(
     LaunchedEffect(encodedUrl) { viewModel.load(encodedUrl) }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                title = { Text(article?.source ?: "") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "חזרה") }
-                },
-                actions = {
+            Column {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surface)
+                        .padding(horizontal = 8.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, "חזרה")
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            article?.source ?: "כתבה",
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Box(
+                            modifier = Modifier
+                                .padding(top = 2.dp)
+                                .width(32.dp)
+                                .height(3.dp)
+                                .background(MaterialTheme.colorScheme.primary)
+                        )
+                    }
                     article?.let { a ->
                         IconButton(onClick = {
                             showAiSheet = true
                             aiViewModel.analyze(a.url)
                         }) {
-                            Icon(Icons.Default.AutoAwesome, "סכם עם AI")
+                            Icon(
+                                Icons.Default.AutoAwesome,
+                                "סכם עם AI",
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
                         }
                     }
-                },
-            )
+                }
+                HorizontalDivider(
+                    thickness = 0.5.dp,
+                    color = MaterialTheme.colorScheme.outline,
+                )
+            }
         }
     ) { padding ->
         article?.let { a ->
             LazyColumn(
-                modifier = Modifier.padding(padding),
+                modifier = Modifier.padding(padding).fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 item {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .clip(CircleShape)
+                                .background(sourceColor(a.source))
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            a.source.uppercase(),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = sourceColor(a.source),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text("•", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            timeAgoHebrew(a.publishedDate),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+
+                item {
                     Text(
                         a.title,
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
 
@@ -89,6 +145,10 @@ fun ArticleDetailScreen(
                         onClick = { onOpenWebView(a.url) },
                         modifier = Modifier.fillMaxWidth().height(52.dp),
                         shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                        ),
                     ) {
                         Icon(Icons.Default.OpenInBrowser, null)
                         Spacer(Modifier.width(8.dp))
@@ -144,11 +204,20 @@ fun ArticleDetailScreen(
                 if (a.crossSourceMatches.isNotEmpty()) {
                     item {
                         Spacer(Modifier.height(8.dp))
-                        Text("דיווחים דומים ממקורות אחרים", fontWeight = FontWeight.SemiBold)
+                        HorizontalDivider(
+                            thickness = 0.5.dp,
+                            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                        )
+                        Spacer(Modifier.height(8.dp))
                         Text(
-                            "לחץ על ידיעה כדי להשוות ולבדוק בעצמך",
+                            "דיווחים דומים ממקורות אחרים",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            "לחץ על ידיעה כדי לפתוח את הכרטיס שלה",
                             fontSize = 11.sp,
-                            color = OnSurface2,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     items(a.crossSourceMatches) { match ->
@@ -156,30 +225,46 @@ fun ArticleDetailScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(8.dp))
-                                .background(DarkSurface2)
+                                .clickable { onOpenArticle(match.url) }
+                                .background(MaterialTheme.colorScheme.surface)
                                 .padding(12.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(6.dp)
+                                            .clip(CircleShape)
+                                            .background(sourceColor(match.source))
+                                    )
+                                    Spacer(Modifier.width(5.dp))
+                                    Text(
+                                        match.source.uppercase(),
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = sourceColor(match.source),
+                                    )
+                                }
+                                Spacer(Modifier.height(4.dp))
                                 Text(
-                                    match.source,
-                                    fontSize = 12.sp,
-                                    color = sourceColor(match.source),
-                                    fontWeight = FontWeight.Bold,
+                                    match.title,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    maxLines = 3,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                 )
-                                Text(match.title, fontSize = 13.sp, maxLines = 3)
                             }
                             Spacer(Modifier.width(8.dp))
                             Column(horizontalAlignment = Alignment.End) {
                                 Text(
                                     "${(match.similarity * 100).toInt()}%",
                                     fontSize = 12.sp,
-                                    color = OnSurface2,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontWeight = FontWeight.Bold,
                                 )
                                 Spacer(Modifier.height(4.dp))
                                 TextButton(
-                                    onClick = { onOpenWebView(match.url) },
+                                    onClick = { onOpenArticle(match.url) },
                                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
                                 ) { Text("פתח", fontSize = 11.sp) }
                             }
@@ -212,7 +297,7 @@ fun ArticleDetailScreen(
                 }
             }
         } ?: Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
+            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
         }
     }
 }
