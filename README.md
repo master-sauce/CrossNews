@@ -278,3 +278,6 @@ app/src/main/java/com/newsbias/tracker/
 ```
 
 שמור בשורש הפרויקט כ-`README.md`. GitHub יציג אוטומטית בעברית עם תמיכה מלאה ב-RTL בזכות תגי ה-emoji וה-markdown.
+
+
+בדיקה
