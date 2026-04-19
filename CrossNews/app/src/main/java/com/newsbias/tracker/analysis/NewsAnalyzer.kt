@@ -33,9 +33,9 @@ class NewsAnalyzer @Inject constructor() {
             reasons.add("מסקנה: הידיעה מופיעה רק במקור אחד — לא ניתן לאמת")
         } else {
             matches.forEach { m ->
-                reasons.add("• ${m.source}: דמיון ${(m.similarity * 100).toInt()}% — \"${m.title.take(60)}...\"")
+                reasons.add("• ${m.source}: דומה ב ${(m.similarity * 100).toInt()}% — \"${m.title.take(60)}...\"")
             }
-            reasons.add("ממוצע דמיון: ${(avgSimilarity * 100).toInt()}%")
+            reasons.add("ממוצע בדמיון: ${(avgSimilarity * 100).toInt()}%")
             reasons.add("מסקנה: ${matches.size} מקורות חיצוניים מדווחים על ידיעה דומה")
         }
 
