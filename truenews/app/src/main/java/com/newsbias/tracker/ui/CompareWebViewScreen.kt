@@ -19,7 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -44,6 +43,13 @@ fun CompareWebViewScreen(
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
 
+    val leftWebView = remember(leftUrl) {
+        movableContentOf<Modifier> { mod -> ArticleWebView(leftUrl, mod) }
+    }
+    val rightWebView = remember(rightUrl) {
+        movableContentOf<Modifier> { mod -> ArticleWebView(rightUrl, mod) }
+    }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         topBar = {
@@ -64,13 +70,13 @@ fun CompareWebViewScreen(
                                 CompareMode.FULLSCREEN -> "כתבה ${fullscreenIndex + 1}/2"
                                 else -> "השוואה"
                             },
-                            style = MaterialTheme.typography.headlineMedium,
+                            style = MaterialTheme.typography.displayLarge,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
                         Box(
                             modifier = Modifier
                                 .padding(top = 2.dp)
-                                .width(32.dp)
+                                .width(42.dp)
                                 .height(3.dp)
                                 .background(MaterialTheme.colorScheme.primary)
                         )
@@ -128,18 +134,18 @@ fun CompareWebViewScreen(
             when (mode) {
                 CompareMode.VERTICAL -> Column(modifier = Modifier.fillMaxSize()) {
                     PaneHeader("כתבה 1", leftUrl, context, uriHandler)
-                    ArticleWebView(leftUrl, Modifier.weight(1f).fillMaxWidth())
+                    leftWebView(Modifier.weight(1f).fillMaxWidth())
                     HorizontalDivider(
                         thickness = 2.dp,
                         color = MaterialTheme.colorScheme.primary,
                     )
                     PaneHeader("כתבה 2", rightUrl, context, uriHandler)
-                    ArticleWebView(rightUrl, Modifier.weight(1f).fillMaxWidth())
+                    rightWebView(Modifier.weight(1f).fillMaxWidth())
                 }
                 CompareMode.HORIZONTAL -> Row(modifier = Modifier.fillMaxSize()) {
                     Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
                         PaneHeader("כתבה 1", leftUrl, context, uriHandler)
-                        ArticleWebView(leftUrl, Modifier.weight(1f).fillMaxWidth())
+                        leftWebView(Modifier.weight(1f).fillMaxWidth())
                     }
                     VerticalDivider(
                         thickness = 2.dp,
@@ -147,14 +153,18 @@ fun CompareWebViewScreen(
                     )
                     Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
                         PaneHeader("כתבה 2", rightUrl, context, uriHandler)
-                        ArticleWebView(rightUrl, Modifier.weight(1f).fillMaxWidth())
+                        rightWebView(Modifier.weight(1f).fillMaxWidth())
                     }
                 }
                 CompareMode.FULLSCREEN -> {
                     val url = if (fullscreenIndex == 0) leftUrl else rightUrl
                     Column(modifier = Modifier.fillMaxSize()) {
                         PaneHeader("כתבה ${fullscreenIndex + 1}", url, context, uriHandler)
-                        ArticleWebView(url, Modifier.weight(1f).fillMaxWidth())
+                        if (fullscreenIndex == 0) {
+                            leftWebView(Modifier.weight(1f).fillMaxWidth())
+                        } else {
+                            rightWebView(Modifier.weight(1f).fillMaxWidth())
+                        }
                         Spacer(Modifier.height(72.dp))
                     }
                 }
@@ -242,19 +252,21 @@ private fun AiAnalysisContent(
                 modifier = Modifier.size(22.dp),
             )
             Spacer(Modifier.width(8.dp))
-            Text(
-                "ניתוח AI",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    "ניתוח AI",
+                    style = MaterialTheme.typography.displayLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Box(
+                    modifier = Modifier
+                        .padding(top = 2.dp)
+                        .width(42.dp)
+                        .height(3.dp)
+                        .background(MaterialTheme.colorScheme.primary)
+                )
+            }
         }
-        Box(
-            modifier = Modifier
-                .padding(top = 2.dp)
-                .width(42.dp)
-                .height(3.dp)
-                .background(MaterialTheme.colorScheme.primary)
-        )
         Spacer(Modifier.height(14.dp))
 
         if (state.loading) {
