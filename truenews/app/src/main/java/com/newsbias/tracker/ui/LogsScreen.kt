@@ -17,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -42,51 +43,83 @@ fun LogsScreen(viewModel: LogsViewModel = hiltViewModel()) {
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
-            TopAppBar(
-                title = {
+            Column {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surface)
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     if (searchActive) {
                         TextField(
                             value = searchQuery,
                             onValueChange = { searchQuery = it },
                             placeholder = { Text("חפש בלוג...", fontSize = 14.sp) },
                             singleLine = true,
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier.weight(1f),
                             colors = TextFieldDefaults.colors(
-                                focusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-                                unfocusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent,
                             ),
                         )
                     } else {
-                        Text("לוג ניתוח")
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                "לוג ניתוח",
+                                style = MaterialTheme.typography.displayLarge,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .padding(top = 2.dp)
+                                    .width(42.dp)
+                                    .height(3.dp)
+                                    .background(MaterialTheme.colorScheme.primary)
+                            )
+                        }
                     }
-                },
-                actions = {
                     IconButton(onClick = {
                         if (searchActive) { searchQuery = ""; searchActive = false }
                         else searchActive = true
                     }) {
-                        Icon(if (searchActive) Icons.Default.Close else Icons.Default.Search, null)
+                        Icon(
+                            if (searchActive) Icons.Default.Close else Icons.Default.Search,
+                            "חיפוש",
+                        )
                     }
-                },
-            )
+                }
+                HorizontalDivider(
+                    thickness = 0.5.dp,
+                    color = MaterialTheme.colorScheme.outline,
+                )
+            }
         }
     ) { padding ->
         if (filtered.isEmpty()) {
-            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text(if (searchQuery.isBlank()) "אין נתונים" else "לא נמצאו תוצאות", color = OnSurface2)
+            Box(
+                Modifier.fillMaxSize().padding(padding),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    if (searchQuery.isBlank()) "אין נתונים" else "לא נמצאו תוצאות",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
             return@Scaffold
         }
 
         LazyColumn(
             modifier = Modifier.padding(padding),
-            contentPadding = PaddingValues(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(vertical = 0.dp),
+            verticalArrangement = Arrangement.spacedBy(0.dp),
         ) {
             items(filtered, key = { it.url }) { article ->
                 LogCard(article)
             }
+            item { Spacer(Modifier.height(80.dp)) }
         }
     }
 }
@@ -95,64 +128,85 @@ fun LogsScreen(viewModel: LogsViewModel = hiltViewModel()) {
 private fun LogCard(article: NewsArticle) {
     var expanded by remember { mutableStateOf(false) }
 
-    Card(
-        modifier = Modifier.fillMaxWidth().clickable { expanded = !expanded },
-        colors = CardDefaults.cardColors(containerColor = DarkSurface),
-        shape = RoundedCornerShape(10.dp),
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { expanded = !expanded }
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                SourceChip(article.source)
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    CorroborationBadge(article.corroborationCount)
-                    Spacer(Modifier.width(4.dp))
-                    Icon(
-                        if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                        null,
-                        tint = OnSurface2,
-                    )
-                }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            SourceChip(article.source)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                CorroborationBadge(article.corroborationCount)
+                Spacer(Modifier.width(4.dp))
+                Icon(
+                    if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                    null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
+        }
 
-            Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(8.dp))
 
-            Text(
-                article.title,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Medium,
-                maxLines = if (expanded) 10 else 2,
-            )
+        Text(
+            article.title,
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = if (expanded) 10 else 2,
+        )
 
-            AnimatedVisibility(visible = expanded) {
-                Column(modifier = Modifier.padding(top = 10.dp)) {
-                    HorizontalDivider()
-                    Spacer(Modifier.height(8.dp))
+        AnimatedVisibility(visible = expanded) {
+            Column(modifier = Modifier.padding(top = 12.dp)) {
+                HorizontalDivider(
+                    thickness = 0.5.dp,
+                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                )
+                Spacer(Modifier.height(10.dp))
 
-                    Text("פירוט הניתוח:", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = OnSurface2)
-                    Spacer(Modifier.height(6.dp))
+                Text(
+                    "פירוט הניתוח".uppercase(),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Spacer(Modifier.height(8.dp))
 
-                    if (article.scoreReasons.isEmpty()) {
-                        Text("אין נתוני ניתוח", fontSize = 12.sp, color = OnSurface2)
-                    } else {
-                        article.scoreReasons.forEach { reason ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 2.dp)
-                                    .clip(RoundedCornerShape(4.dp))
-                                    .background(DarkSurface2)
-                                    .padding(horizontal = 8.dp, vertical = 4.dp)
-                            ) {
-                                Text(reason, fontSize = 12.sp, lineHeight = 16.sp)
-                            }
+                if (article.scoreReasons.isEmpty()) {
+                    Text(
+                        "אין נתוני ניתוח",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                } else {
+                    article.scoreReasons.forEach { reason ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 2.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .padding(horizontal = 10.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                reason,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
                         }
                     }
                 }
             }
         }
+
+        Spacer(Modifier.height(12.dp))
+        HorizontalDivider(
+            thickness = 0.5.dp,
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+        )
     }
 }

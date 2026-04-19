@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -18,7 +19,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.newsbias.tracker.data.NewsArticle
 import com.newsbias.tracker.ui.theme.*
-import java.net.URLEncoder
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,13 +29,46 @@ fun ComparisonScreen(
     val groups by viewModel.groups.collectAsStateWithLifecycle()
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("ניתוח השוואה") }) }
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            Column {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surface)
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            "ניתוח השוואה",
+                            style = MaterialTheme.typography.displayLarge,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Box(
+                            modifier = Modifier
+                                .padding(top = 2.dp)
+                                .width(42.dp)
+                                .height(3.dp)
+                                .background(MaterialTheme.colorScheme.primary)
+                        )
+                    }
+                }
+                HorizontalDivider(
+                    thickness = 0.5.dp,
+                    color = MaterialTheme.colorScheme.outline,
+                )
+            }
+        }
     ) { padding ->
         if (groups.isEmpty()) {
-            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+            Box(
+                Modifier.fillMaxSize().padding(padding),
+                contentAlignment = Alignment.Center,
+            ) {
                 Text(
                     "אין כרגע קבוצות להשוואה.\nרענן את העדכונים כדי למצוא דיווחים דומים.",
-                    color = OnSurface2,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 13.sp,
                 )
             }
@@ -44,72 +77,98 @@ fun ComparisonScreen(
 
         LazyColumn(
             modifier = Modifier.padding(padding),
-            contentPadding = PaddingValues(12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            contentPadding = PaddingValues(vertical = 0.dp),
+            verticalArrangement = Arrangement.spacedBy(0.dp),
         ) {
             items(groups) { group ->
                 GroupCard(group, onCompare)
             }
+            item { Spacer(Modifier.height(80.dp)) }
         }
     }
 }
 
 @Composable
 private fun GroupCard(group: ComparisonGroup, onCompare: (String, String) -> Unit) {
-    Card(
-        colors = CardDefaults.cardColors(containerColor = DarkSurface),
-        shape = RoundedCornerShape(12.dp),
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Text(
-                "נושא דומה בכמה מקורות:",
-                fontSize = 11.sp,
-                color = OnSurface2,
-                fontWeight = FontWeight.Medium,
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary)
             )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                "נושא דומה בכמה מקורות",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
+
+        Spacer(Modifier.height(10.dp))
+
+        PrimaryArticleRow(group.primary)
+
+        group.related.forEach { related ->
             Spacer(Modifier.height(8.dp))
-
-            ArticleRow(group.primary, isPrimary = true)
-
-            group.related.forEach { related ->
-                Spacer(Modifier.height(6.dp))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(DarkSurface2)
-                        .clickable { onCompare(group.primary.url, related.url) }
-                        .padding(10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        SourceChip(related.source)
-                        Spacer(Modifier.height(4.dp))
-                        Text(related.title, fontSize = 13.sp, maxLines = 2)
-                    }
-                    Spacer(Modifier.width(8.dp))
-                    Text("השווה ↔", fontSize = 12.sp, color = MaterialTheme.colorScheme.primary)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .clickable { onCompare(group.primary.url, related.url) }
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    SourceChip(related.source)
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        related.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 2,
+                    )
                 }
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    "השווה ↔",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                )
             }
         }
+
+        Spacer(Modifier.height(14.dp))
+        HorizontalDivider(
+            thickness = 0.5.dp,
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+        )
     }
 }
 
 @Composable
-private fun ArticleRow(article: NewsArticle, isPrimary: Boolean) {
+private fun PrimaryArticleRow(article: NewsArticle) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
-            .background(if (isPrimary) DarkSurface2 else DarkSurface)
-            .padding(10.dp),
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.10f))
+            .padding(12.dp),
     ) {
         SourceChip(article.source)
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(6.dp))
         Text(
             article.title,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.SemiBold,
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontWeight = FontWeight.Bold,
             maxLines = 3,
         )
     }
