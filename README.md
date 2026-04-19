@@ -276,3 +276,4 @@ app/src/main/java/com/newsbias/tracker/
 
 **⚡ נבנה בישראל — לצרכני חדשות חכמים יותר.**
 ```
+1
