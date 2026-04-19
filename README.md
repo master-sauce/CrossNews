@@ -277,4 +277,8 @@ app/src/main/java/com/newsbias/tracker/
 **⚡ נבנה בישראל — לצרכני חדשות חכמים יותר.**
 ```
 
+<<<<<<< HEAD
 שמור בשורש הפרויקט כ-`README.md`. GitHub יציג אוטומטית בעברית עם תמיכה מלאה ב-RTL בזכות תגי ה-emoji וה-markdown.
+=======
+שמור בשורש הפרויקט כ-`README.md`. GitHub יציג אוטומטית בעברית עם תמיכה מלאה ב-RTL בזכות תגי ה-emoji וה-markdown.
+>>>>>>> cc9d5f108f573b90d135ed032fd014a3c29c7882
