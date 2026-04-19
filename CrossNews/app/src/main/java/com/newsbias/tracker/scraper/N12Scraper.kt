@@ -8,7 +8,6 @@ import javax.inject.Inject
 
 class N12Scraper @Inject constructor(client: OkHttpClient) : BaseScraper(client) {
 
-    // N12 = Channel 12 = Keshet/Mako. RSS lives on rcs.mako.co.il
     private val RSS_FEEDS = listOf(
         "https://rcs.mako.co.il/rss/news-military.xml",
         "https://rcs.mako.co.il/rss/news-law.xml",
@@ -33,7 +32,6 @@ class N12Scraper @Inject constructor(client: OkHttpClient) : BaseScraper(client)
                     content = "",
                     source = "N12",
                     publishedDate = parseDate(entry.pubDate),
-                    author = entry.author ?: "",
                     tags = entry.categories,
                 ))
             }

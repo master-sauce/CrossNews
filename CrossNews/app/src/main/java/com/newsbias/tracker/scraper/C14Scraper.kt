@@ -29,14 +29,12 @@ class C14Scraper @Inject constructor(client: OkHttpClient) : BaseScraper(client)
                     content = "",
                     source = "Channel 14",
                     publishedDate = parseDate(entry.pubDate),
-                    author = entry.author ?: "",
                     tags = entry.categories,
                 ))
             }
             if (articles.isNotEmpty()) break
         }
 
-        // Fallback: homepage link scraping
         if (articles.isEmpty()) {
             val home = fetchDoc("https://www.c14.co.il") ?: return@withContext articles
             val found = home.extractArticleLinks(ARTICLE_REGEX, "Channel 14", maxItems = 20)

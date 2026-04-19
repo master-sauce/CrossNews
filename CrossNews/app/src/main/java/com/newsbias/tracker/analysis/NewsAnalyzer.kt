@@ -11,10 +11,7 @@ class NewsAnalyzer @Inject constructor() {
     /** Initial pass — neutral. Real scoring happens in applyCorroboration. */
     fun analyze(article: NewsArticle): NewsArticle {
         return article.copy(
-            fakeNewsProbability = null,
-            biasScore = null,
             scoreReasons = listOf("ממתין לבדיקה צולבת מול מקורות אחרים"),
-            sensationalTitle = false,
         )
     }
 
@@ -40,7 +37,6 @@ class NewsAnalyzer @Inject constructor() {
         }
 
         return article.copy(
-            fakeNewsProbability = null,    // no score — user decides
             crossSourceMatches = matches,
             corroborationCount = matches.size,
             scoreReasons = reasons,

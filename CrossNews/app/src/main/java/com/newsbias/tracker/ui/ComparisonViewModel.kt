@@ -6,6 +6,7 @@ import com.newsbias.tracker.data.NewsArticle
 import com.newsbias.tracker.data.NewsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class ComparisonGroup(
@@ -15,8 +16,11 @@ data class ComparisonGroup(
 
 @HiltViewModel
 class ComparisonViewModel @Inject constructor(
-    repository: NewsRepository,
+    private val repository: NewsRepository,
 ) : ViewModel() {
+
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing
 
     val groups: StateFlow<List<ComparisonGroup>> = repository.allArticles
         .map { articles ->
@@ -29,6 +33,7 @@ class ComparisonViewModel @Inject constructor(
                 val related = article.crossSourceMatches
                     .mapNotNull { byUrl[it.url] }
                     .filter { it.url !in seen }
+                    .distinctBy { "${it.source}|${normalizeTitle(it.title)}" }
                 if (related.isEmpty()) continue
 
                 seen.add(article.url)
@@ -38,4 +43,30 @@ class ComparisonViewModel @Inject constructor(
             result
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun rematch() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            try { repository.rematchAll() }
+            catch (_: Exception) {}
+            _isRefreshing.value = false
+        }
+    }
+
+    fun refreshAndRematch() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            try {
+                repository.refreshNews()
+                repository.rematchAll()
+            } catch (_: Exception) {}
+            _isRefreshing.value = false
+        }
+    }
+
+    private fun normalizeTitle(t: String): String =
+        t.lowercase()
+            .replace(Regex("[\\p{Punct}\"׳״'`]"), "")
+            .replace(Regex("\\s+"), " ")
+            .trim()
 }

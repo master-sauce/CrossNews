@@ -16,7 +16,6 @@ data class RssItem(
     val title: String,
     val link: String,
     val pubDate: String?,
-    val author: String?,
     val categories: List<String>,
 )
 
@@ -64,11 +63,10 @@ abstract class BaseScraper(protected val client: OkHttpClient) : NewsScraper {
                     XmlPullParser.TEXT -> if (inItem) {
                         val text = parser.text?.trim() ?: ""
                         if (text.isNotEmpty()) when (tag) {
-                            "title"                  -> fields["title"] = text
-                            "link"                   -> fields["link"] = (fields["link"] ?: "") + text
-                            "pubDate"                -> fields["pubDate"] = text
-                            "author", "dc:creator"   -> fields["author"] = text
-                            "category"               -> cats.add(text)
+                            "title"    -> fields["title"] = text
+                            "link"     -> fields["link"] = (fields["link"] ?: "") + text
+                            "pubDate"  -> fields["pubDate"] = text
+                            "category" -> cats.add(text)
                         }
                     }
                     XmlPullParser.END_TAG -> {
@@ -77,7 +75,6 @@ abstract class BaseScraper(protected val client: OkHttpClient) : NewsScraper {
                                 title = fields["title"] ?: "",
                                 link = fields["link"] ?: "",
                                 pubDate = fields["pubDate"],
-                                author = fields["author"],
                                 categories = cats.toList(),
                             ))
                             inItem = false
@@ -124,14 +121,12 @@ abstract class BaseScraper(protected val client: OkHttpClient) : NewsScraper {
             seen.add(url)
             val date = container?.select("time[datetime]")?.firstOrNull()
                 ?.attr("datetime")?.let { parseDate(it) } ?: System.currentTimeMillis()
-            val author = container?.select("[class*=author],[class*=byline]")
-                ?.firstOrNull()?.text()?.trim() ?: ""
             val image = container?.select("img[src]")?.firstOrNull()
                 ?.attr("abs:src")?.ifBlank { null }
             results.add(NewsArticle(
                 url = url, title = title, content = "",
                 source = source, publishedDate = date,
-                author = author, imageUrl = image,
+                imageUrl = image,
             ))
         }
 

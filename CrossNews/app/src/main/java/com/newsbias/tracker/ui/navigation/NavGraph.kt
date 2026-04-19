@@ -42,6 +42,19 @@ fun NavGraph(
 
         composable(Screen.Logs.route) { LogsScreen() }
 
+        composable(Screen.Bookmarks.route) {
+            BookmarksScreen(
+                onArticleClick = { url ->
+                    navController.navigate(Screen.Detail.createRoute(url))
+                },
+                onCompare = { left, right ->
+                    navController.navigate(Screen.Compare.createRoute(left, right))
+                },
+            )
+        }
+
+        composable(Screen.Settings.route) { SettingsScreen() }
+
         composable(Screen.Detail.route) { backStack ->
             val encodedUrl = backStack.arguments?.getString("encodedUrl") ?: return@composable
             ArticleDetailScreen(

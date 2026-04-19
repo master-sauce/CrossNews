@@ -6,6 +6,8 @@ sealed class Screen(val route: String) {
     object Feed       : Screen("feed")
     object Comparison : Screen("comparison")
     object Logs       : Screen("logs")
+    object Bookmarks : Screen("bookmarks")
+    object Settings  : Screen("settings")
 
     object Detail : Screen("detail/{encodedUrl}") {
         fun createRoute(url: String): String =

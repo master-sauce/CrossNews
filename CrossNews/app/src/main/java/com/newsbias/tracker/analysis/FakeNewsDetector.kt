@@ -18,8 +18,16 @@ data class FakeAnalysis(
 @Singleton
 class FakeNewsDetector @Inject constructor() {
 
+    private val sensationalMarkers = listOf(
+        "!", "שוקינג", "שוק", "דרמטי", "בלעדי", "סנסציוני",
+        "חשיפה", "מזעזע", "הלם", "אסון", "פצצה",
+    )
+
     fun analyze(article: NewsArticle, matches: List<CrossMatch>): FakeAnalysis {
-        var score = article.fakeNewsProbability ?: 0.1f
+        val sensational = isSensational(article.title)
+
+        var score = 0.10f
+        if (sensational) score += 0.15f
 
         val corroborated = matches.isNotEmpty()
         if (!corroborated) score += 0.40f
@@ -29,8 +37,8 @@ class FakeNewsDetector @Inject constructor() {
         if (matches.any { it.source == "Kan" }) score -= 0.20f
 
         // Short body = clickbait
-        val bodyWords = article.content.split("\\s+".toRegex()).size
-        if (bodyWords < 50) score += 0.15f
+        val bodyWords = article.content.split("\\s+".toRegex()).filter { it.isNotBlank() }.size
+        if (bodyWords in 1..49) score += 0.15f
 
         val final = score.coerceIn(0f, 1f)
         return FakeAnalysis(
@@ -42,7 +50,12 @@ class FakeNewsDetector @Inject constructor() {
             },
             corroborated = corroborated,
             corroborationCount = matches.size,
-            sensationalTitle = article.sensationalTitle,
+            sensationalTitle = sensational,
         )
+    }
+
+    private fun isSensational(title: String): Boolean {
+        val lower = title.lowercase()
+        return sensationalMarkers.any { lower.contains(it.lowercase()) }
     }
 }

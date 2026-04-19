@@ -79,8 +79,13 @@ class NewsViewModel @Inject constructor(
     fun refresh() {
         viewModelScope.launch {
             isRefreshing.value = true
-            repository.refreshNews().onFailure { error.value = it.message }
-            isRefreshing.value = false
+            try {
+                repository.refreshNews()
+            } catch (e: Exception) {
+                error.value = e.message
+            } finally {
+                isRefreshing.value = false
+            }
         }
     }
 

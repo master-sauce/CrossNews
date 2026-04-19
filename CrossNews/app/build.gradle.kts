@@ -16,7 +16,7 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
-        
+
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -83,11 +83,6 @@ dependencies {
     implementation(libs.hilt.work)
     ksp(libs.hilt.work.compiler)
 
-    // Room
-    implementation(libs.room.runtime)
-    implementation(libs.room.ktx)
-    ksp(libs.room.compiler)
-
     // Network
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
@@ -103,6 +98,11 @@ dependencies {
     // WorkManager
     implementation(libs.work.runtime.ktx)
 
-    //for ui
+    // UI
     implementation("io.coil-kt:coil-compose:2.5.0")
+
+    // DataStore
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+
+    implementation("androidx.documentfile:documentfile:1.0.1")
 }

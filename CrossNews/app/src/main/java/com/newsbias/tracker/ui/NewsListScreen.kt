@@ -275,7 +275,7 @@ private fun SourceFilterPill(source: String, selected: Boolean, onClick: () -> U
 }
 
 @Composable
-private fun SelectableArticleCard(
+internal fun SelectableArticleCard(
     article: NewsArticle,
     isSelected: Boolean,
     onClick: () -> Unit,

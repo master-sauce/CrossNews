@@ -26,10 +26,9 @@ class YnetScraper @Inject constructor(client: OkHttpClient) : BaseScraper(client
                 articles.add(NewsArticle(
                     url = url,
                     title = entry.title,
-                    content = "",            // fetched on-demand
+                    content = "",
                     source = "Ynet",
                     publishedDate = parseDate(entry.pubDate),
-                    author = entry.author ?: "",
                     tags = entry.categories,
                 ))
             }

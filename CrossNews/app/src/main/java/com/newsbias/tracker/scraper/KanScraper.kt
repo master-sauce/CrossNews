@@ -33,7 +33,6 @@ class KanScraper @Inject constructor(client: OkHttpClient) : BaseScraper(client)
             if (links.isNotEmpty()) break
         }
 
-        // Parallel fetch — all articles at once instead of sequential
         coroutineScope {
             links.take(8).map { url ->
                 async {
@@ -48,8 +47,6 @@ class KanScraper @Inject constructor(client: OkHttpClient) : BaseScraper(client)
                         "div[class*=content-text]",
                         "article",
                     )
-                    val author = doc.select("[class*=author],[class*=reporter],[rel=author]")
-                        .firstOrNull()?.text()?.trim() ?: ""
                     val publishedDate = doc.select("time[datetime]").firstOrNull()
                         ?.attr("datetime")?.let { parseDate(it) }
                         ?: doc.select("meta[property=article:published_time]")
@@ -61,7 +58,6 @@ class KanScraper @Inject constructor(client: OkHttpClient) : BaseScraper(client)
                         content = body,
                         source = "Kan",
                         publishedDate = publishedDate,
-                        author = author,
                         contentFetched = body.isNotBlank(),
                     )
                 }

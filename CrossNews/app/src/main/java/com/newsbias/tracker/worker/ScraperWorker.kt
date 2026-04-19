@@ -15,11 +15,12 @@ class ScraperWorker @AssistedInject constructor(
     private val repository: NewsRepository,
 ) : CoroutineWorker(context, params) {
 
-    override suspend fun doWork(): Result {
-        return repository.refreshNews().fold(
-            onSuccess = { count -> Result.success(workDataOf("count" to count)) },
-            onFailure = { if (runAttemptCount < 3) Result.retry() else Result.failure() },
-        )
+    override suspend fun doWork(): Result = try {
+        repository.init()
+        repository.refreshNews()
+        Result.success()
+    } catch (e: Exception) {
+        if (runAttemptCount < 3) Result.retry() else Result.failure()
     }
 
     companion object {

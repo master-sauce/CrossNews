@@ -14,6 +14,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.BookmarkBorder
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Public
@@ -43,6 +45,7 @@ fun ArticleDetailScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val aiState by aiViewModel.state.collectAsStateWithLifecycle()
+    val bookmarked by viewModel.isBookmarked.collectAsStateWithLifecycle()
     val article = state.article
     val uriHandler = LocalUriHandler.current
     val context = LocalContext.current
@@ -80,6 +83,14 @@ fun ArticleDetailScreen(
                         )
                     }
                     article?.let { a ->
+                        IconButton(onClick = { viewModel.toggleBookmark() }) {
+                            Icon(
+                                if (bookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+                                "סימנייה",
+                                tint = if (bookmarked) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface,
+                            )
+                        }
                         IconButton(onClick = {
                             showAiSheet = true
                             aiViewModel.analyze(a.url)
@@ -157,17 +168,41 @@ fun ArticleDetailScreen(
                 }
 
                 item {
-                    OutlinedButton(
-                        onClick = {
-                            showAiSheet = true
-                            aiViewModel.analyze(a.url)
-                        },
-                        modifier = Modifier.fillMaxWidth().height(48.dp),
-                        shape = RoundedCornerShape(10.dp),
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        Icon(Icons.Default.AutoAwesome, null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text("סכם עם AI", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                        OutlinedButton(
+                            onClick = { viewModel.toggleBookmark() },
+                            modifier = Modifier.weight(1f).height(48.dp),
+                            shape = RoundedCornerShape(10.dp),
+                        ) {
+                            Icon(
+                                if (bookmarked) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
+                                null,
+                                modifier = Modifier.size(18.dp),
+                                tint = if (bookmarked) MaterialTheme.colorScheme.primary
+                                else LocalContentColor.current,
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                if (bookmarked) "שמור בסימניות" else "הוסף לסימניות",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.SemiBold,
+                            )
+                        }
+                        OutlinedButton(
+                            onClick = {
+                                showAiSheet = true
+                                aiViewModel.analyze(a.url)
+                            },
+                            modifier = Modifier.weight(1f).height(48.dp),
+                            shape = RoundedCornerShape(10.dp),
+                        ) {
+                            Icon(Icons.Default.AutoAwesome, null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(6.dp))
+                            Text("סכם עם AI", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                        }
                     }
                 }
 
