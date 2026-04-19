@@ -1,5 +1,3 @@
-
-```markdown
 # 📰 Cross News — מעקב הטיות בחדשות הישראליות
 
 אפליקציית אנדרואיד לניטור, ניתוח והשוואת כתבות חדשותיות ממקורות ישראליים מרכזיים. האפליקציה מזהה דיווחים דומים בין מקורות שונים, מנתחת הטיות אפשריות, ומאפשרת למשתמש להשוות בין כתבות באופן חזותי ובאמצעות AI.
@@ -21,7 +19,7 @@
 ## 🔍 תכונות עיקריות
 
 ### 📡 איסוף חדשות ממקורות מרובים
-האפליקציה גורדת כתבות בזמן אמת מהמקורות הבאים:
+האפליקציה משיגה כתבות בזמן אמת מהמקורות הבאים:
 
 - **Ynet** — ynet.co.il
 - **N12** — n12.co.il
@@ -70,86 +68,11 @@
 - **Coroutines + Flow** — עבודה אסינכרונית
 - **Navigation Compose** — ניווט בין מסכים
 
-### שכבות האפליקציה
-
-```
-┌─────────────────────────────────────┐
-│         UI (Compose)                │
-│  NewsListScreen, CompareScreen...   │
-└─────────────────────────────────────┘
-                 ↕
-┌─────────────────────────────────────┐
-│         ViewModels                  │
-│    StateFlow, business logic        │
-└─────────────────────────────────────┘
-                 ↕
-┌─────────────────────────────────────┐
-│         Repository                  │
-│   NewsRepository, AiAnalyzer        │
-└─────────────────────────────────────┘
-                 ↕
-┌───────────────┬─────────────────────┐
-│   Scrapers    │   Room Database     │
-│  (Jsoup)      │   (local cache)     │
-└───────────────┴─────────────────────┘
-                 ↕
-┌─────────────────────────────────────┐
-│   External Services                 │
-│  Jina Reader, Pollinations AI       │
-└─────────────────────────────────────┘
-```
 
 ### שירותים חיצוניים
 
 - **Jina Reader** (`r.jina.ai`) — חילוץ טקסט נקי מעמודי כתבות
 - **Pollinations AI** (`text.pollinations.ai`) — מודל שפה לניתוח וסיכום (בחינם, ללא API key)
-
----
-
-## 📂 מבנה הפרויקט
-
-```
-app/src/main/java/com/newsbias/tracker/
-├── MainActivity.kt              # נקודת כניסה
-├── NewsApp.kt                   # Application class (Hilt)
-│
-├── data/                        # שכבת נתונים
-│   ├── NewsArticle.kt           # Entity
-│   ├── NewsDao.kt               # Room DAO
-│   ├── AppDatabase.kt           # Room DB
-│   └── NewsRepository.kt        # Repository
-│
-├── scraper/                     # סקרייפרים לכל מקור
-│   ├── NewsScraper.kt           # Interface
-│   ├── YnetScraper.kt
-│   ├── N12Scraper.kt
-│   ├── KanScraper.kt
-│   ├── C14Scraper.kt
-│   └── Tv13Scraper.kt
-│
-├── network/                     # שירותי רשת
-│   ├── ReaderService.kt         # Jina Reader
-│   └── AiService.kt             # Pollinations AI
-│
-├── analysis/                    # מנוע ניתוח
-│   └── NewsAnalyzer.kt          # אימות, דמיון, הטיות
-│
-├── di/                          # Hilt modules
-│   └── AppModule.kt
-│
-└── ui/                          # שכבת תצוגה
-    ├── NewsListScreen.kt        # פיד ראשי
-    ├── ArticleDetailScreen.kt   # כרטיס כתבה
-    ├── ComparisonScreen.kt      # השוואה אוטומטית
-    ├── CompareWebViewScreen.kt  # השוואה ידנית
-    ├── LogsScreen.kt            # לוג ניתוח
-    ├── ArticleCard.kt           # רכיב כרטיס
-    ├── navigation/NavGraph.kt
-    └── theme/                   # ערכת נושא
-        ├── Color.kt
-        ├── Typography.kt
-        └── Theme.kt
-```
 
 ---
 
@@ -166,7 +89,7 @@ app/src/main/java/com/newsbias/tracker/
 
 1. **שכפל את הפרויקט:**
    ```bash
-   git clone https://github.com/yourusername/truenews.git
+   git clone https://github.com/mastersauce/CrossNews.git
    cd truenews
    ```
 
@@ -218,20 +141,7 @@ app/src/main/java/com/newsbias/tracker/
 
 ---
 
-## ⚙️ ספריות עיקריות
 
-| ספרייה | גרסה | שימוש |
-|---|---|---|
-| Jetpack Compose | BOM 2024.x | UI |
-| Hilt | 2.50+ | DI |
-| Room | 2.6.x | DB |
-| Jsoup | 1.17.x | HTML scraping |
-| OkHttp | 4.12.x | HTTP client |
-| Coil | 2.5.x | Image loading |
-| Navigation Compose | 2.7.x | Navigation |
-| Kotlinx Coroutines | 1.7.x | Async |
-
----
 
 ## 🔒 פרטיות
 
