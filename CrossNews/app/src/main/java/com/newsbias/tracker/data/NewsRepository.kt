@@ -44,13 +44,22 @@ class NewsRepository @Inject constructor(
             val existing = store.articles.value
             val pool = LinkedHashMap<String, NewsArticle>()
             existing.forEach { pool[it.url] = it }
+
+            val now = System.currentTimeMillis()
             dedupedScraped.forEach { fresh ->
                 val prior = pool[fresh.url]
-                pool[fresh.url] = if (prior != null) fresh.copy(
-                    crossSourceMatches = prior.crossSourceMatches,
-                    corroborationCount = prior.corroborationCount,
-                    scoreReasons = prior.scoreReasons,
-                ) else fresh
+                pool[fresh.url] = if (prior != null) {
+                    // Existing article: preserve first-seen timestamp + analysis
+                    fresh.copy(
+                        publishedDate = prior.publishedDate,
+                        crossSourceMatches = prior.crossSourceMatches,
+                        corroborationCount = prior.corroborationCount,
+                        scoreReasons = prior.scoreReasons,
+                    )
+                } else {
+                    // New article: stamp with current insertion time → sorts to top
+                    fresh.copy(publishedDate = now)
+                }
             }
             val enriched = enrich(pool.values.toList())
             if (enriched.isNotEmpty()) store.upsert(enriched)
@@ -78,7 +87,6 @@ class NewsRepository @Inject constructor(
         val targetTokens = tokenize(target.title)
         if (targetTokens.isEmpty()) return emptyList()
 
-        // Score every candidate
         val scored = all.asSequence()
             .filter { it.url != target.url && it.source != target.source }
             .map { other -> other to jaccard(targetTokens, tokenize(other.title)) }
@@ -86,7 +94,6 @@ class NewsRepository @Inject constructor(
             .sortedByDescending { it.second }
             .toList()
 
-        // Keep only BEST candidate per source (drops near-duplicates from same outlet)
         val bestPerSource = LinkedHashMap<String, Pair<NewsArticle, Float>>()
         for ((other, sim) in scored) {
             val prev = bestPerSource[other.source]
