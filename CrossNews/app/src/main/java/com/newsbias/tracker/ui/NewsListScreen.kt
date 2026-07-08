@@ -1,5 +1,6 @@
 package com.newsbias.tracker.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -39,6 +40,16 @@ fun NewsListScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     var searchActive by remember { mutableStateOf(false) }
+
+    BackHandler(enabled = searchActive || state.selectionMode) {
+        when {
+            searchActive -> {
+                viewModel.setSearchQuery("")
+                searchActive = false
+            }
+            state.selectionMode -> viewModel.toggleSelectionMode()
+        }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
