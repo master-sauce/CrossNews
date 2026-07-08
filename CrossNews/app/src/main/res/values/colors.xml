@@ -7,4 +7,7 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- App window background (light / newsprint warm white) -->
+    <color name="news_background">#FFFAF7F2</color>
 </resources>
